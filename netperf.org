@@ -1,0 +1,209 @@
+* Netperf exploration
+Before running these, need to start the netserver daemon
+#+begin_src sh
+netserver
+#+end_src
+
+#+RESULTS:
+: Starting netserver with host 'IN(6)ADDR_ANY' port '12865' and family AF_UNSPEC
+
+
+#+begin_src shell  
+netperf
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP    | STREAM  | TEST    | from         | 0.0.0.0 | (0.0.0.0) | port | 0 | AF_INET | to | localhost | () | port | 0 | AF_INET | : | demo |
+| Recv     | Send   | Send    |         |              |         |           |      |   |         |    |           |    |      |   |         |   |      |
+| Socket   | Socket | Message | Elapsed |              |         |           |      |   |         |    |           |    |      |   |         |   |      |
+| Size     | Size   | Size    | Time    | Throughput   |         |           |      |   |         |    |           |    |      |   |         |   |      |
+| bytes    | bytes  | bytes   | secs.   | 10^6bits/sec |         |           |      |   |         |    |           |    |      |   |         |   |      |
+|          |        |         |         |              |         |           |      |   |         |    |           |    |      |   |         |   |      |
+| 131072   | 16384  | 16384   | 10.0    | 33295.42     |         |           |      |   |         |    |           |    |      |   |         |   |      |
+
+This is the normal TCP_STREAM test, used to measure large file transfers. Not super relevant to this project as we want to measure request-response time but good to see what TCP is good at.
+
+#+begin_src shell  
+netperf -t TCP_RR -c -C
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP     | REQUEST/RESPONSE | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to | localhost | ()    | port | 0 | AF_INET | : | demo | : | first | burst | 0 |
+| Local    | /Remote |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| Socket   | Size    | Request          | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |    |           |       |      |   |         |   |      |   |       |       |   |
+| Send     | Recv    | Size             | Size  | Time    | Rate     | local     | remote | local  | remote  |    |           |       |      |   |         |   |      |   |       |       |   |
+| bytes    | bytes   | bytes            | bytes | secs.   | per      | sec       | %      | S      | %       | S  | us/Tr     | us/Tr |      |   |         |   |      |   |       |       |   |
+|          |         |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  | 1                | 1     | 10.0    | 63909.78 | 32.43     | 32.43  | 20.296 | 20.296  |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+
+In this test (TCP_RR) netperf measures the request/response performance using TCP. It gives the transmission rate in messages per second.
+** Changing the RR size
+#+begin_src sh  
+netperf -t TCP_RR -c -C -- -r 1,1
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP     | REQUEST/RESPONSE | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to | localhost | ()    | port | 0 | AF_INET | : | demo | : | first | burst | 0 |
+| Local    | /Remote |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| Socket   | Size    | Request          | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |    |           |       |      |   |         |   |      |   |       |       |   |
+| Send     | Recv    | Size             | Size  | Time    | Rate     | local     | remote | local  | remote  |    |           |       |      |   |         |   |      |   |       |       |   |
+| bytes    | bytes   | bytes            | bytes | secs.   | per      | sec       | %      | S      | %       | S  | us/Tr     | us/Tr |      |   |         |   |      |   |       |       |   |
+|          |         |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  | 1                | 1     | 10.0    | 62907.53 | 32.37     | 32.37  | 20.582 | 20.582  |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+
+#+begin_src sh  
+netperf -t TCP_RR -c -C -- -r 128,128
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP     | REQUEST/RESPONSE | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to | localhost | ()    | port | 0 | AF_INET | : | demo | : | first | burst | 0 |
+| Local    | /Remote |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| Socket   | Size    | Request          | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |    |           |       |      |   |         |   |      |   |       |       |   |
+| Send     | Recv    | Size             | Size  | Time    | Rate     | local     | remote | local  | remote  |    |           |       |      |   |         |   |      |   |       |       |   |
+| bytes    | bytes   | bytes            | bytes | secs.   | per      | sec       | %      | S      | %       | S  | us/Tr     | us/Tr |      |   |         |   |      |   |       |       |   |
+|          |         |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  | 128              | 128   | 10.0    | 62366.99 | 32.35     | 32.35  | 20.749 | 20.749  |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+
+#+begin_src sh  
+netperf -t TCP_RR -c -C -- -r 1k,1k
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP     | REQUEST/RESPONSE | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to | localhost | ()    | port | 0 | AF_INET | : | demo | : | first | burst | 0 |
+| Local    | /Remote |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| Socket   | Size    | Request          | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |    |           |       |      |   |         |   |      |   |       |       |   |
+| Send     | Recv    | Size             | Size  | Time    | Rate     | local     | remote | local  | remote  |    |           |       |      |   |         |   |      |   |       |       |   |
+| bytes    | bytes   | bytes            | bytes | secs.   | per      | sec       | %      | S      | %       | S  | us/Tr     | us/Tr |      |   |         |   |      |   |       |       |   |
+|          |         |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  | 1000             | 1000  | 10.0    | 65544.97 | 32.54     | 32.54  | 19.858 | 19.858  |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+
+#+begin_src sh  
+netperf -t TCP_RR -c -C -- -r 16k,16k
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP     | REQUEST/RESPONSE | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to | localhost | ()    | port | 0 | AF_INET | : | demo | : | first | burst | 0 |
+| Local    | /Remote |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| Socket   | Size    | Request          | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |    |           |       |      |   |         |   |      |   |       |       |   |
+| Send     | Recv    | Size             | Size  | Time    | Rate     | local     | remote | local  | remote  |    |           |       |      |   |         |   |      |   |       |       |   |
+| bytes    | bytes   | bytes            | bytes | secs.   | per      | sec       | %      | S      | %       | S  | us/Tr     | us/Tr |      |   |         |   |      |   |       |       |   |
+|          |         |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  | 16000            | 16000 | 10.0    | 51217.06 | 32.05     | 32.06  | 25.031 | 25.035  |    |           |       |      |   |         |   |      |   |       |       |   |
+| 16384    | 131072  |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |      |   |       |       |   |
+
+We can see in this test that the transmission rate starts to tank when the size goes up
+** Accounting for the conneciton setup
+We can see that when we use the TCP_CRR test which accounts for the connection setup time, the transmission rate tanks
+
+#+begin_src sh  
+netperf -t TCP_CRR -c -C -- -r 1,1
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP     | Connect/Request/Response | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to    | localhost | () | port | 0 | AF_INET | : | demo |
+| Local    | /Remote |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+| Socket   | Size    | Request                  | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |       |           |    |      |   |         |   |      |
+| Send     | Recv    | Size                     | Size  | Time    | Rate     | local     | remote | local  | remote  |       |           |    |      |   |         |   |      |
+| bytes    | bytes   | bytes                    | bytes | secs.   | per      | sec       | %      | %      | us/Tr   | us/Tr |           |    |      |   |         |   |      |
+|          |         |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+| 16384    | 131072  | 1                        | 1     | 10.0    | 17912.35 | 35.96     | 36.81  | 80.297 | 82.202  |       |           |    |      |   |         |   |      |
+| 16384    | 131072  |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+
+#+begin_src sh  
+netperf -t TCP_CRR -c -C -- -r 128,128
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP     | Connect/Request/Response | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to    | localhost | () | port | 0 | AF_INET | : | demo |
+| Local    | /Remote |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+| Socket   | Size    | Request                  | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |       |           |    |      |   |         |   |      |
+| Send     | Recv    | Size                     | Size  | Time    | Rate     | local     | remote | local  | remote  |       |           |    |      |   |         |   |      |
+| bytes    | bytes   | bytes                    | bytes | secs.   | per      | sec       | %      | %      | us/Tr   | us/Tr |           |    |      |   |         |   |      |
+|          |         |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+| 16384    | 131072  | 128                      | 128   | 10.0    | 17938.77 | 34.89     | 35.41  | 77.796 | 78.96   |       |           |    |      |   |         |   |      |
+| 16384    | 131072  |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+
+#+begin_src sh  
+netperf -t TCP_CRR -c -C -- -r 1k,1k
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP     | Connect/Request/Response | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to    | localhost | () | port | 0 | AF_INET | : | demo |
+| Local    | /Remote |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+| Socket   | Size    | Request                  | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |       |           |    |      |   |         |   |      |
+| Send     | Recv    | Size                     | Size  | Time    | Rate     | local     | remote | local  | remote  |       |           |    |      |   |         |   |      |
+| bytes    | bytes   | bytes                    | bytes | secs.   | per      | sec       | %      | %      | us/Tr   | us/Tr |           |    |      |   |         |   |      |
+|          |         |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+| 16384    | 131072  | 1000                     | 1000  | 10.0    | 17845.59 | 35.4      | 36.25  | 79.344 | 81.242  |       |           |    |      |   |         |   |      |
+| 16384    | 131072  |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+
+#+begin_src sh  
+netperf -t TCP_CRR -c -C -- -r 16k,16k
+#+end_src 
+
+#+RESULTS:
+| MIGRATED | TCP     | Connect/Request/Response | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to    | localhost | () | port | 0 | AF_INET | : | demo |
+| Local    | /Remote |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+| Socket   | Size    | Request                  | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |       |           |    |      |   |         |   |      |
+| Send     | Recv    | Size                     | Size  | Time    | Rate     | local     | remote | local  | remote  |       |           |    |      |   |         |   |      |
+| bytes    | bytes   | bytes                    | bytes | secs.   | per      | sec       | %      | %      | us/Tr   | us/Tr |           |    |      |   |         |   |      |
+|          |         |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+| 16384    | 131072  | 16000                    | 16000 | 10.0    | 16401.07 | 35.45     | 35.93  | 86.449 | 87.622  |       |           |    |      |   |         |   |      |
+| 16384    | 131072  |                          |       |         |          |           |        |        |         |       |           |    |      |   |         |   |      |
+** Now lets get some performance out of it
+https://www.ibm.com/docs/en/aix/7.2?topic=tuning-tcp-request-response-workload
+
+TCP_NODELAY is a socket option that controls whether to use delayed acknowledgments or not. Delayed acknowledgments can slow down request/response workloads as it can wait up to 200ms to piggyback an acknowledgment on a response packet.
+
+Netperf allows us to enable TCP_NODELAY with the -D flag.
+
+#+begin_src sh
+netperf -t TCP_RR -c -C -- -r 1,1 -D
+#+end_src
+
+#+RESULTS:
+| MIGRATED | TCP     | REQUEST/RESPONSE | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to | localhost | ()    | port | 0 | AF_INET | : | nodelay | : | demo | : | first | burst | 0 |
+| Local    | /Remote |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| Socket   | Size    | Request          | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| Send     | Recv    | Size             | Size  | Time    | Rate     | local     | remote | local  | remote  |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| bytes    | bytes   | bytes            | bytes | secs.   | per      | sec       | %      | S      | %       | S  | us/Tr     | us/Tr |      |   |         |   |         |   |      |   |       |       |   |
+|          |         |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| 16384    | 131072  | 1                | 1     | 10.0    | 64873.22 | 31.96     | 31.96  | 19.704 | 19.704  |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| 16384    | 131072  |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+
+
+#+begin_src sh
+netperf -t TCP_RR -c -C -- -r 1k,1k -D
+#+end_src
+
+#+RESULTS:
+| MIGRATED | TCP     | REQUEST/RESPONSE | TEST  | from    | 0.0.0.0  | (0.0.0.0) | port   | 0      | AF_INET | to | localhost | ()    | port | 0 | AF_INET | : | nodelay | : | demo | : | first | burst | 0 |
+| Local    | /Remote |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| Socket   | Size    | Request          | Resp. | Elapsed | Trans.   | CPU       | CPU    | S.dem  | S.dem   |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| Send     | Recv    | Size             | Size  | Time    | Rate     | local     | remote | local  | remote  |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| bytes    | bytes   | bytes            | bytes | secs.   | per      | sec       | %      | S      | %       | S  | us/Tr     | us/Tr |      |   |         |   |         |   |      |   |       |       |   |
+|          |         |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| 16384    | 131072  | 1000             | 1000  | 10.0    | 61682.83 | 34.06     | 34.06  | 22.087 | 22.087  |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| 16384    | 131072  |                  |       |         |          |           |        |        |         |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+
+#+begin_src sh
+netperf -t TCP_RR -c -C -- -r 16k,16k -D
+#+end_src
+
+#+RESULTS:
+| MIGRATED | TCP     | REQUEST/RESPONSE | TEST  | from    | 0.0.0.0 | (0.0.0.0) | port   | 0      | AF_INET | to | localhost | ()    | port | 0 | AF_INET | : | nodelay | : | demo | : | first | burst | 0 |
+| Local    | /Remote |                  |       |         |         |           |        |        |         |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| Socket   | Size    | Request          | Resp. | Elapsed | Trans.  | CPU       | CPU    | S.dem  | S.dem   |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| Send     | Recv    | Size             | Size  | Time    | Rate    | local     | remote | local  | remote  |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| bytes    | bytes   | bytes            | bytes | secs.   | per     | sec       | %      | S      | %       | S  | us/Tr     | us/Tr |      |   |         |   |         |   |      |   |       |       |   |
+|          |         |                  |       |         |         |           |        |        |         |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| 16384    | 131072  | 16000            | 16000 | 10.0    | 50503.9 | 32.05     | 32.05  | 25.386 | 25.386  |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+| 16384    | 131072  |                  |       |         |         |           |        |        |         |    |           |       |      |   |         |   |         |   |      |   |       |       |   |
+
+We can see that we get a significant performance increase with this.
+*** Saturating the link
+We can adjust the socket buffer sizes to better saturate the link. We can use the bandwidth delay product
